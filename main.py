@@ -3,7 +3,7 @@ from aiogram import Bot, Dispatcher, types
 from aiogram.utils import executor
 import g4f
 
-TOKEN = "8009461376:AAHjMUEZV5L90B1Vqrv7tHm8XQZDaKUFNMU"
+TOKEN = "7501977935:AAEw8mKmjxQ0rbCg0pWuoSw1YBFCs9y3o10"
 ADMIN_ID = 861087987
 
 bot = Bot(token=TOKEN)
