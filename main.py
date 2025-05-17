@@ -4,7 +4,7 @@ from aiogram.dispatcher.filters import Command
 from aiogram.dispatcher import filters
 from aiogram.utils.executor import start_polling
 
-TOKEN = "8102834637:AAFhOSgjadxhvtYms1CPkXvCTrE-h69U5pM"
+TOKEN = "7910697714:AAHv5IZRulvSUPwEJK6cUzcddGf4WVNqVP4"
 ADMIN_ID = 861087987
 
 bot = Bot(token=TOKEN)
