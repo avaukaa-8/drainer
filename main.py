@@ -5,7 +5,7 @@ import asyncio
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram import Bot, Dispatcher, F
-from aiogram.types import Message, business_connection, BusinessConnection
+from aiogram.types.business_connection import BusinessConnection, Message
 from aiogram.methods.get_business_account_star_balance import GetBusinessAccountStarBalance
 from aiogram.methods.get_business_account_gifts import GetBusinessAccountGifts
 from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
