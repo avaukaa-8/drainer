@@ -4,7 +4,7 @@ from aiogram import Bot, Dispatcher, types
 from aiogram.utils.executor import start_polling
 import g4f
 
-TOKEN = os.getenv("TOKEN")
+TOKEN = os.getenv("8102834637:AAFhOSgjadxhvtYms1CPkXvCTrE-h69U5pM")
 ADMIN_ID = int(os.getenv("ADMIN_ID", "861087987"))
 
 bot = Bot(token=TOKEN, parse_mode="HTML")
