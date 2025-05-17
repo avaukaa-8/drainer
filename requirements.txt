@@ -1,2 +1,4 @@
-aiogram==3.4.1
-python-dotenv
+aiogram==2.25.1
+g4f
+aiohttp
+requests
